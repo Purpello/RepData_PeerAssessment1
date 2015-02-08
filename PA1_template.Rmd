@@ -40,7 +40,7 @@ activity_no_NA
 
 ## What is mean total number of steps taken per day?
 
-Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  Well also output the histogram to the **figures/** folder of this GitHub repository.
+Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  
 
 First, let's summarize total steps by day.  We'll do this by treating date as a factor and by using the **activity_no_NA** data set, from which NAs were removed.  We use the `dplyr` pipeline notation `%>%`, which improves code readability for a series of related programming statements.  
 
@@ -69,7 +69,7 @@ filter(TotalNAs, TotalNAs>0) #use the dplyr filter function to show the rows whe
 We can now create a histogram, using `ggplot2`, of daily steps for the 53 days for which data were collected.  We use a binwidth of 2000 in order to give a good balance between summarizing the data and still seeing enough detail.
 
 
-```{r}
+```{r StepsHistogram}
 stepHisto<- ggplot(stepsByDay, aes(x=total)) +
   geom_histogram(binwidth=2000,color="black", fill="white") + 
   labs(title="Total Daily Steps\n ") +                         

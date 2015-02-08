@@ -86,7 +86,7 @@ activity_no_NA
 
 ## What is mean total number of steps taken per day?
 
-Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  Well also output the histogram to the **figures/** folder of this GitHub repository.
+Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  Well also output the histogram to the **PA1_template_files/figure-html/** folder of this GitHub repository.
 
 First, let's summarize total steps by day.  We'll do this by treating date as a factor and by using the **activity_no_NA** data set, from which NAs were removed.  We use the `dplyr` pipeline notation `%>%`, which improves code readability for a series of related programming statements.  
 
@@ -158,7 +158,7 @@ stepHisto<- ggplot(stepsByDay, aes(x=total)) +
 stepHisto
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+![](PA1_template_files/figure-html/StepsHistogram-1.png) 
 
 
 We'll use the `summary` function from base R to calculate the **mean**, **median**, quartiles and extremes for the distribution shown in the histogram above.  We can see that the **mean and the median are just above 10,000 steps**.
