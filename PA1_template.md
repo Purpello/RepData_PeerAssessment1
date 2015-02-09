@@ -1,0 +1,208 @@
+# Reproducible Research: Peer Assessment 1
+
+
+In this assignment, we will answer several questions about a set of walking activity data for an anonymous individual, described in the README file.
+
+## Loading and preprocessing the data
+
+Our first step is to load the data and do any initial preprocessing.  
+
+First, let's load the `dplyr` package, which provides convenient methods for grouping, filtering, and summarizing data.  Depending on the configuration of your system, you may see several system messages related to loading `dplyr`.  We'll also load `ggplot2` so that we can make attractive plots (though we could have also used the base plotting system or lattice).  
+
+
+
+```r
+library(dplyr)      #for easier data summaries
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
+library(ggplot2)    #for nice looking plots
+```
+
+Next, let's read in the data file.  `tbl_df` is a `dplyr` wrapper around a data frame that makes it print only a few rows and only the colums that will fit on the screen.
+
+
+```r
+activity<-tbl_df(read.csv(file="activity.csv", head=TRUE))
+activity
+```
+
+```
+## Source: local data frame [17,568 x 3]
+## 
+##    steps       date interval
+## 1     NA 2012-10-01        0
+## 2     NA 2012-10-01        5
+## 3     NA 2012-10-01       10
+## 4     NA 2012-10-01       15
+## 5     NA 2012-10-01       20
+## 6     NA 2012-10-01       25
+## 7     NA 2012-10-01       30
+## 8     NA 2012-10-01       35
+## 9     NA 2012-10-01       40
+## 10    NA 2012-10-01       45
+## ..   ...        ...      ...
+```
+
+As described in the README file, there are 17,568 rows and 3 variables - steps, date, and interval. 
+
+Let's now create a version of the data with the rows that have an NA value for steps removed.  We will use that when summarizing steps by day.  Otherwise, if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  We'll use the `dplry` `filter` functionality to only select rows where the value of steps is not NA. 
+
+
+```r
+activity_no_NA<-filter(activity, !(is.na(steps)))
+activity_no_NA
+```
+
+```
+## Source: local data frame [15,264 x 3]
+## 
+##    steps       date interval
+## 1      0 2012-10-02        0
+## 2      0 2012-10-02        5
+## 3      0 2012-10-02       10
+## 4      0 2012-10-02       15
+## 5      0 2012-10-02       20
+## 6      0 2012-10-02       25
+## 7      0 2012-10-02       30
+## 8      0 2012-10-02       35
+## 9      0 2012-10-02       40
+## 10     0 2012-10-02       45
+## ..   ...        ...      ...
+```
+
+## What is mean total number of steps taken per day?
+
+Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  Well also output the histogram to the **PA1_template_files/figure-html/** folder of this GitHub repository.
+
+First, let's summarize total steps by day.  We'll do this by treating date as a factor and by using the **activity_no_NA** data set, from which NAs were removed.  We use the `dplyr` pipeline notation `%>%`, which improves code readability for a series of related programming statements.  
+
+Our 2 summary statistics are the **total** steps for a particular day, and the **count** of (non-NA) observations for that particular day.  
+
+
+
+```r
+stepsByDay<- activity_no_NA %>%
+  group_by(Date = as.factor(date)) %>%
+  summarise(total = sum(steps), count = n())
+
+head(stepsByDay,10)
+```
+
+```
+## Source: local data frame [10 x 3]
+## 
+##          Date total count
+## 1  2012-10-02   126   288
+## 2  2012-10-03 11352   288
+## 3  2012-10-04 12116   288
+## 4  2012-10-05 13294   288
+## 5  2012-10-06 15420   288
+## 6  2012-10-07 11015   288
+## 7  2012-10-09 12811   288
+## 8  2012-10-10  9900   288
+## 9  2012-10-11 10304   288
+## 10 2012-10-12 17382   288
+```
+
+The data below show days where the total number of NAs > 0.  We see that there were 8 days in which every observation was an NA and no days had fewer NAs than that.  We will use this fact the basis for our **data imputation** strategy later.
+
+
+
+```r
+TotalNAs<- activity %>%
+  group_by(Date = as.factor(date)) %>%
+  summarise(TotalNAs = sum(is.na(steps)))
+
+filter(TotalNAs, TotalNAs>0) #use the dplyr filter function to show the rows where the number of NAs > 0
+```
+
+```
+## Source: local data frame [8 x 2]
+## 
+##         Date TotalNAs
+## 1 2012-10-01      288
+## 2 2012-10-08      288
+## 3 2012-11-01      288
+## 4 2012-11-04      288
+## 5 2012-11-09      288
+## 6 2012-11-10      288
+## 7 2012-11-14      288
+## 8 2012-11-30      288
+```
+
+We can now create a histogram, using `ggplot2`, of daily steps for the 53 days for which data were collected.  We use a binwidth of 2000 in order to give a good balance between summarizing the data and still seeing enough detail.
+
+
+
+```r
+stepHisto<- ggplot(stepsByDay, aes(x=total)) +
+  geom_histogram(binwidth=2000,color="black", fill="white") + 
+  labs(title="Total Daily Steps\n ") +                         
+  labs(x = "\nTotal Steps") +
+  labs(y = "Number of Days\n")
+
+stepHisto
+```
+
+![](PA1_template_files/figure-html/StepsHistogram-1.png) 
+
+
+We'll use the `summary` function from base R to calculate the **mean**, **median**, quartiles and extremes for the distribution shown in the histogram above.  We can see that the **mean and the median are just above 10,000 steps**.
+
+
+
+```r
+#get the mean, median, etc. from the 'summary' function in base R.
+#We create our own array, DailySteps, by taking the different elements from the summary output.
+
+stepsSummary<-summary(stepsByDay$total) 
+DailySteps<-c(                         
+  as.integer(stepsSummary[4]), #mean
+  as.integer(stepsSummary[3]), #median
+  as.integer(stepsSummary[1]), #min
+  as.integer(stepsSummary[6]), #max
+  as.integer(stepsSummary[2]), #1stQuartile
+  as.integer(stepsSummary[5])  #3rdQuartile
+  )
+
+#We assign names to the array we just created.
+names(DailySteps)<-c("Mean", "Median", "Minimum", "Maximum", "1Q", "3Q")            
+#Make it a data frame so it prints vertically, and maybe we can do more with it later.
+DailySteps<-as.data.frame(DailySteps)
+
+DailySteps
+```
+
+```
+##         DailySteps
+## Mean         10770
+## Median       10760
+## Minimum         41
+## Maximum      21190
+## 1Q            8841
+## 3Q           13290
+```
+
+## What is the average daily activity pattern?
+
+
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
