@@ -86,7 +86,7 @@ activity_no_NA
 
 ## What is mean total number of steps taken per day?
 
-Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  Well also output the histogram to the **PA1_template_files/figure-html/** folder of this GitHub repository.
+Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  
 
 First, let's summarize total steps by day.  We'll do this by treating date as a factor and by using the **activity_no_NA** data set, from which NAs were removed.  We use the `dplyr` pipeline notation `%>%`, which improves code readability for a series of related programming statements.  
 
@@ -199,7 +199,52 @@ DailySteps
 
 ## What is the average daily activity pattern?
 
+Let's begin by looking at a plot of the average number of steps per 5-minute period averaged over the 53 days we've been analyzing thus far.  Only those times that mark the beginning of an interesting change in the pattern are marked on the x-axis in order to keep the plot cleaner.  Also, our goal is to get a general idea of the shape of the daily activity pattern.  More detail could be seen by inspecting the data in the **stepsByInterval** data frame.
 
+First, we'll average the data by interval.  We'll use the data frame that has the NAs removed.
+
+
+```r
+stepsByInterval<- activity_no_NA %>%
+  group_by(Interval = as.factor(interval)) %>%
+  summarise(AverageSteps = mean(steps))
+```
+
+Then, we will use the stepsByInterval data frame to create a plot of the average steps by interval.
+
+
+```r
+#We will only label some x-axis tickmarks to keep the plot cleaner.
+
+#define which intervals you want to label on the x-axis
+tickmarks<-c(1,68,104,145,187,235) 
+#create human readable lables for the tickmarks.
+intervalLabels<-c("midnight","5:35","8:35","12:00","15:30","19:30")
+
+#Use the base plotting system to create a time-series plot.
+plot(stepsByInterval$AverageSteps, type="l", xaxt='n', 
+     ylab="Average Steps", xlab="5-minute Interval",main="Average Steps per 5-minute Interval")
+
+#put the tickmarks on the axis with the appropriate labels
+axis(1, at=tickmarks, labels = intervalLabels)
+```
+
+![](PA1_template_files/figure-html/stepsByIntervalPlot-1.png) 
+
+The **busiest 5-minute interval of the day starts at 8:35am** with an average of just over 206 steps.  The code below produces that result.
+
+
+```r
+#Find the interval with the maximum number of steps.
+filter(stepsByInterval, AverageSteps == max(AverageSteps))
+```
+
+```
+## Source: local data frame [1 x 2]
+## 
+##   Interval AverageSteps
+## 1      835     206.1698
+```
 
 ## Imputing missing values
 
