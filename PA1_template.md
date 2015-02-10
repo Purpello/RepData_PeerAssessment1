@@ -208,6 +208,19 @@ First, we'll average the data by interval.  We'll use the data frame that has th
 stepsByInterval<- activity_no_NA %>%
   group_by(Interval = as.factor(interval)) %>%
   summarise(AverageSteps = mean(steps))
+
+head(stepsByInterval,5)
+```
+
+```
+## Source: local data frame [5 x 2]
+## 
+##   Interval AverageSteps
+## 1        0    1.7169811
+## 2        5    0.3396226
+## 3       10    0.1320755
+## 4       15    0.1509434
+## 5       20    0.0754717
 ```
 
 Then, we will use the stepsByInterval data frame to create a plot of the average steps by interval.
@@ -216,7 +229,8 @@ Then, we will use the stepsByInterval data frame to create a plot of the average
 ```r
 #We will only label some x-axis tickmarks to keep the plot cleaner.
 
-#define which intervals you want to label on the x-axis
+#define which intervals you want to label on the x-axis.
+#these were identified by inspecting the stepsByInterval data frame.
 tickmarks<-c(1,68,104,145,187,235) 
 #create human readable lables for the tickmarks.
 intervalLabels<-c("midnight","5:35","8:35","12:00","15:30","19:30")

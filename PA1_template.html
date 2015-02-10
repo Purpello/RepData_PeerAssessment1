@@ -191,11 +191,22 @@ DailySteps</code></pre>
 <p>First, we’ll average the data by interval. We’ll use the data frame that has the NAs removed.</p>
 <pre class="r"><code>stepsByInterval&lt;- activity_no_NA %&gt;%
   group_by(Interval = as.factor(interval)) %&gt;%
-  summarise(AverageSteps = mean(steps))</code></pre>
+  summarise(AverageSteps = mean(steps))
+
+head(stepsByInterval,5)</code></pre>
+<pre><code>## Source: local data frame [5 x 2]
+## 
+##   Interval AverageSteps
+## 1        0    1.7169811
+## 2        5    0.3396226
+## 3       10    0.1320755
+## 4       15    0.1509434
+## 5       20    0.0754717</code></pre>
 <p>Then, we will use the stepsByInterval data frame to create a plot of the average steps by interval.</p>
 <pre class="r"><code>#We will only label some x-axis tickmarks to keep the plot cleaner.
 
-#define which intervals you want to label on the x-axis
+#define which intervals you want to label on the x-axis.
+#these were identified by inspecting the stepsByInterval data frame.
 tickmarks&lt;-c(1,68,104,145,187,235) 
 #create human readable lables for the tickmarks.
 intervalLabels&lt;-c(&quot;midnight&quot;,&quot;5:35&quot;,&quot;8:35&quot;,&quot;12:00&quot;,&quot;15:30&quot;,&quot;19:30&quot;)
