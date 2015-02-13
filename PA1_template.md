@@ -5,37 +5,27 @@ In this assignment, I will answer several questions about a set of walking activ
 
 ## Loading and preprocessing the data
 
-Our first step is to load the data and do any initial preprocessing.  
+Our first step is to load libraries, the data and do any initial preprocessing of the data.  
 
-First, let's load the `dplyr` package, which provides convenient methods for grouping, filtering, and summarizing data.  Depending on the configuration of your system, you may see several system messages related to loading `dplyr`.  We'll also load `ggplot2` so that I can make attractive plots.  I will also used the base plotting system.
+First, let's load the `dplyr` package, which provides convenient methods for grouping, filtering, and summarizing data.  We'll also load `ggplot2` for attractive plots.  
 
 
 
 ```r
+#message=FALSE in the code chunk header just prevents R masking messages due to loading dplyr
+
 library(dplyr)      #for easier data summaries
-```
-
-```
-## 
-## Attaching package: 'dplyr'
-## 
-## The following object is masked from 'package:stats':
-## 
-##     filter
-## 
-## The following objects are masked from 'package:base':
-## 
-##     intersect, setdiff, setequal, union
-```
-
-```r
 library(ggplot2)    #for nice looking plots
 ```
 
-Next, let's read in the data file.  `tbl_df` is a `dplyr` wrapper around a data frame that makes it print only a few rows and only the colums that will fit on the screen.
+Next, let's read in the data file to a data frame called **activity**.
 
 
 ```r
+# tbl_df is a dplyr wrapper around a data frame 
+# that makes it print only a few rows and only the 
+# colums that will fit on the screen.
+
 activity<-tbl_df(read.csv(file="activity.csv", head=TRUE))
 activity
 ```
@@ -59,7 +49,7 @@ activity
 
 As described in the README file, there are 17,568 rows and 3 variables - steps, date, and interval. 
 
-Let's now create a version of the data without the rows that have an NA value for steps.  **This anticipates the "imputed data" strategy** required later in the assignment, which I will revisit.  However, making summaries and plots without this handling of NAs doesn't seem useful.  Otherwise, if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  
+Let's now create a version of the data without the rows that have an NA value for steps.  This is not the same thing as the data imputation we will do later.  We're removing the NAs here because making summaries and plots without this handling of NAs doesn't seem useful.  Otherwise, if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  
 
 We'll use the `dplry` `filter` functionality to only select rows where the value of steps is not NA. 
 
@@ -199,7 +189,7 @@ head(stepsByInterval,5)
 ## 5       20    0.0754717
 ```
 
-Then, I will use the stepsByInterval data frame to create a plot of the average steps by interval.
+Then, I will use the **stepsByInterval** data frame to create a plot of the average steps by interval.
 
 
 ```r
@@ -241,12 +231,11 @@ filter(stepsByInterval, AverageSteps == max(AverageSteps))
 
 ### Total number of missing values in the dataset
 
-As mentioned in the assignment instructions, the NAs affect the interpretation of the data.  I have already anticipated this issue in the previous analyses.  Recall that I stated that if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  That is why I removed the NAs from the data.
-
 There were 8 days in which all 288 observations were NA and no days had fewer NAs than 288, as demonstrated by the following code chunk.  
 
 
 ```r
+#We're starting with the activity data frame, which is the original data with all the NAs.
 TotalNAs<- activity %>%
   group_by(Date = as.factor(date)) %>%
   summarise(TotalNAs = sum(is.na(steps)))
@@ -287,53 +276,155 @@ TotalNAs2
 
 ### Strategy for handling NAs
 
-As mentioned above, we've already devised a strategy for dealing with NAs.  It is to remove the days that have NAs.  This is because the NAs define entire days.  There are not days that have some NAs and some measured values.  If you were to replace NAs with some summary statistic, it would not be any better than removing the entire days that are defined by NAs.
-
-Therefore, the best strategy is to simply remove the NA days and calculate summary statistics and make graphs, which is already what we've done.
+The best strategy will be to use the mean for the 5-minute interval, as suggested in the assignment.  We've already calculated these means earlier and stored them in the **stepsByInterval** data frame.  Also, we have already created a data frame that has no NAs called **activity_no_NA**.  We also confirmed that the NAs were all within specific days.  There were no days that had some NAs and some data values.  So, our strategy for creating the data set with imputed values will be to create a data frame with just NAs, replace those NAs with the corresponding 5-minute interval mean,  then combine that with the **activity_no_NA** data.
 
 ### New dataset from NA strategy.
 
-This has already been done above, but for completeness, is repeated here.
+First we'll create the data that only contains NAs.  There should be 8*288=2304 rows.
 
 
 ```r
-activity_no_NA<-filter(activity, !(is.na(steps)))
-activity_no_NA
+activity_all_NA<-filter(activity, (is.na(steps)))
+activity_all_NA
 ```
 
 ```
-## Source: local data frame [15,264 x 3]
+## Source: local data frame [2,304 x 3]
 ## 
 ##    steps       date interval
-## 1      0 2012-10-02        0
-## 2      0 2012-10-02        5
-## 3      0 2012-10-02       10
-## 4      0 2012-10-02       15
-## 5      0 2012-10-02       20
-## 6      0 2012-10-02       25
-## 7      0 2012-10-02       30
-## 8      0 2012-10-02       35
-## 9      0 2012-10-02       40
-## 10     0 2012-10-02       45
+## 1     NA 2012-10-01        0
+## 2     NA 2012-10-01        5
+## 3     NA 2012-10-01       10
+## 4     NA 2012-10-01       15
+## 5     NA 2012-10-01       20
+## 6     NA 2012-10-01       25
+## 7     NA 2012-10-01       30
+## 8     NA 2012-10-01       35
+## 9     NA 2012-10-01       40
+## 10    NA 2012-10-01       45
 ## ..   ...        ...      ...
+```
+
+Next we replace the NA data with the corresponding 5-minute interval data.  We'll take advantage of the fact that R recycles values.
+
+
+```r
+#Choose rows that have NA values for steps
+activity_all_NA<-filter(activity, (is.na(steps)))
+#Put the average steps per 5-minute interval, stored in stepsByInterval, 
+#into the corresponding NA value.  This takes advantage of R's recycling property.
+activity_all_NA$steps<-stepsByInterval$AverageSteps
+activity_all_NA
+```
+
+```
+## Source: local data frame [2,304 x 3]
+## 
+##        steps       date interval
+## 1  1.7169811 2012-10-01        0
+## 2  0.3396226 2012-10-01        5
+## 3  0.1320755 2012-10-01       10
+## 4  0.1509434 2012-10-01       15
+## 5  0.0754717 2012-10-01       20
+## 6  2.0943396 2012-10-01       25
+## 7  0.5283019 2012-10-01       30
+## 8  0.8679245 2012-10-01       35
+## 9  0.0000000 2012-10-01       40
+## 10 1.4716981 2012-10-01       45
+## ..       ...        ...      ...
+```
+
+Finally, we combine the imputed data with the no-NA data.  We can see that we have 17,568 rows, just like the original data set.
+
+
+```r
+#we use the dplyr efficient rbind function.
+imputedActivityData<-rbind_list(activity_all_NA,activity_no_NA)
+imputedActivityData
+```
+
+```
+## Source: local data frame [17,568 x 3]
+## 
+##        steps       date interval
+## 1  1.7169811 2012-10-01        0
+## 2  0.3396226 2012-10-01        5
+## 3  0.1320755 2012-10-01       10
+## 4  0.1509434 2012-10-01       15
+## 5  0.0754717 2012-10-01       20
+## 6  2.0943396 2012-10-01       25
+## 7  0.5283019 2012-10-01       30
+## 8  0.8679245 2012-10-01       35
+## 9  0.0000000 2012-10-01       40
+## 10 1.4716981 2012-10-01       45
+## ..       ...        ...      ...
 ```
 
 ### Histogram
 
-We have already presented a histogram that shows the best strategy for dealing with NAs.  But, because the assignment grading rubric calls for another graph here, it is included for completeness sake.
+We'll re-use our histogram code, but with the imputed data.  
 
 
 ```r
-stepHisto<- ggplot(stepsByDay, aes(x=total)) +
+#We need to compute stepsByDayImputed to feed the histogram
+stepsByDayImputed<- imputedActivityData %>%
+  group_by(Date = as.factor(date)) %>%
+  summarise(total = sum(steps), count = n())
+
+#Plot the histogram
+stepHisto2<- ggplot(stepsByDayImputed, aes(x=total)) +
   geom_histogram(binwidth=2000,color="black", fill="white") + 
-  labs(title="Total Daily Steps\n ") +                         
+  labs(title="Total Daily Steps with Imputed Data\n ") +                         
   labs(x = "\nTotal Steps") +
   labs(y = "Number of Days\n")
 
-stepHisto
+stepHisto2
 ```
 
 ![](PA1_template_files/figure-html/StepsHistogram2-1.png) 
 
+```r
+stepHisto
+```
+
+![](PA1_template_files/figure-html/StepsHistogram2-2.png) 
+
+The histograms look the same.  Let's compare the mean, median, quartiles and extremes for the imputed and non-imputed data.
+
+
+```r
+#as we did earlier, use the Base R summary function.
+stepsSummaryImputed<-summary(stepsByDayImputed$total) 
+DailyStepsImputed<-c(                         
+  as.integer(stepsSummaryImputed[4]), #mean
+  as.integer(stepsSummaryImputed[3]), #median
+  as.integer(stepsSummaryImputed[1]), #min
+  as.integer(stepsSummaryImputed[6]), #max
+  as.integer(stepsSummaryImputed[2]), #1stQuartile
+  as.integer(stepsSummaryImputed[5])  #3rdQuartile
+  )
+
+#We assign names to the array I just created.
+names(DailyStepsImputed)<-c("Mean", "Median", "Minimum", "Maximum", "1Q", "3Q")  
+
+#Make it a data frame so it prints vertically.
+DailyStepsImputed<-as.data.frame(DailyStepsImputed)
+#combine the non-imputed summary and the imputed summary.
+CompareDailySteps<-cbind(DailyStepsImputed,DailySteps)
+
+CompareDailySteps
+```
+
+```
+##         DailyStepsImputed DailySteps
+## Mean                10770      10770
+## Median              10770      10760
+## Minimum                41         41
+## Maximum             21190      21190
+## 1Q                   9819       8841
+## 3Q                  12810      13290
+```
+
+The data show differences in the quartiles (1st, 3rd, and median).  The mean, min, and max are the same.  Because we imputed mean values, the means weren't different from the data where NAs were removed.  But, the total N differed between the two data sets, which will affect the quartiles.
 
 ## Are there differences in activity patterns between weekdays and weekends?
