@@ -1,24 +1,21 @@
 # Reproducible Research: Peer Assessment 1
 
 
-In this assignment, I will answer several questions about a set of walking activity data for an anonymous individual, described in the README file.  
+This assignment answers several questions about a set of walking activity data for an anonymous individual, described in the README file.  
 
 ## Loading and preprocessing the data
 
-Our first step is to load libraries, the data and do any initial preprocessing of the data.  
-
-First, let's load the `dplyr` package, which provides convenient methods for grouping, filtering, and summarizing data.  We'll also load `ggplot2` for attractive plots.  
-
+First, let's load packages we'll use.
 
 
 ```r
-#message=FALSE in the code chunk header just prevents R masking messages due to loading dplyr
-
 library(dplyr)      #for easier data summaries
-library(ggplot2)    #for nice looking plots
+library(ggplot2)    #for the histogram
+library(lattice)    #for the panel plot
+library(lubridate)  #for handling dates
 ```
 
-Next, let's read in the data file to a data frame called **activity**.
+Next, read in the data file to a data frame called **activity**.
 
 
 ```r
@@ -49,12 +46,12 @@ activity
 
 As described in the README file, there are 17,568 rows and 3 variables - steps, date, and interval. 
 
-Let's now create a version of the data without the rows that have an NA value for steps.  This is not the same thing as the data imputation we will do later.  We're removing the NAs here because making summaries and plots without this handling of NAs doesn't seem useful.  Otherwise, if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  
+Now create a version of the data without the rows that have an NA value for steps.  This is not the same thing as the data imputation we will do later.  We're removing the NAs here because making summaries and plots without this handling of NAs doesn't seem useful.  Otherwise, if you just use `na.rm=TRUE` you get a 0 for your summary statistic on a day that has all NAs for steps, which might not be a good characterization of the typical daily activity.  
 
-We'll use the `dplry` `filter` functionality to only select rows where the value of steps is not NA. 
 
 
 ```r
+#filter is a dplyr function
 activity_no_NA<-filter(activity, !(is.na(steps)))
 activity_no_NA
 ```
@@ -77,16 +74,15 @@ activity_no_NA
 ```
 
 ## What is mean total number of steps taken per day?
+The **mean and the median are just above 10,000 steps**.  Specifically, the **mean=10,770** and the **median=10,760**.  Let's look at more detail.
 
-Let's look at steps per day to get a sense of the distribution of daily activity for this person.  Again, we'll use `dplyr` to help us do the summary.  Then we'll use `ggplot2` to create the histogram.  
-
-First, let's summarize total steps by day.  We'll do this by treating date as a factor and by using the **activity_no_NA** data set, from which NAs were removed.  I use the `dplyr` pipeline notation `%>%`, which improves code readability for a series of related programming statements.  
-
-Our 2 summary statistics are the **total** steps for a particular day, and the **count** of (non-NA) observations for that particular day.  
-
+First, let's summarize total steps by day.  
 
 
 ```r
+#%>% is the dplyr data pipeline notation
+#Our 2 summary statistics are the total steps for a particular day, 
+#and the count of (non-NA) observations for that particular day.  
 stepsByDay<- activity_no_NA %>%
   group_by(Date = as.factor(date)) %>%
   summarise(total = sum(steps), count = n())
@@ -110,11 +106,12 @@ head(stepsByDay,10)
 ## 10 2012-10-12 17382   288
 ```
 
-I can now create a histogram, using `ggplot2`, of daily steps.  I use a binwidth of 2000 in order to give a good balance between summarizing the data and still seeing enough detail.
-
+Create a histogram of daily steps.  
 
 
 ```r
+#Set the binwidth to 2000 in order to give a good balance 
+#between summarizing the data and still seeing enough detail.
 stepHisto<- ggplot(stepsByDay, aes(x=total)) +
   geom_histogram(binwidth=2000,color="black", fill="white") + 
   labs(title="Total Daily Steps\n ") +                         
@@ -126,14 +123,13 @@ stepHisto
 
 ![](PA1_template_files/figure-html/StepsHistogram-1.png) 
 
-
-We'll use the `summary` function from base R to calculate the **mean**, **median**, quartiles and extremes for the distribution shown in the histogram above.  I can see that the **mean and the median are just above 10,000 steps**.  Specifically, the **mean=10,770** and the **median=10,760**.
-
+Now let's compute the mean, the quartiles, and the extremes (min and max).
 
 
 ```r
 #get the mean, median, etc. from the 'summary' function in base R.
-#We create our own array, DailySteps, by taking the different elements from the summary output.
+#We create our own array, DailySteps, by taking the different elements from the
+#summary output.
 
 stepsSummary<-summary(stepsByDay$total) 
 DailySteps<-c(                         
@@ -165,12 +161,11 @@ DailySteps
 
 ## What is the average daily activity pattern?
 
-Let's begin by looking at a plot of the average number of steps per 5-minute period averaged over the 53 days (the ones without NAs) we've been analyzing thus far.  Only those times that mark the beginning of an interesting change in the pattern are marked on the x-axis in order to keep the plot cleaner.  Also, our goal is to get a general idea of the shape of the daily activity pattern.  More detail could be seen by inspecting the data in the **stepsByInterval** data frame.
-
-First, we'll average the data by interval.
+First, average the data by interval.
 
 
 ```r
+#Use the data from which the NAs were removed.
 stepsByInterval<- activity_no_NA %>%
   group_by(Interval = as.factor(interval)) %>%
   summarise(AverageSteps = mean(steps))
@@ -189,12 +184,11 @@ head(stepsByInterval,5)
 ## 5       20    0.0754717
 ```
 
-Then, I will use the **stepsByInterval** data frame to create a plot of the average steps by interval.
+Then, create a plot of the average steps by interval using the summary data just created.
 
 
 ```r
 #We will only label some x-axis tickmarks to keep the plot cleaner.
-
 #define which intervals you want to label on the x-axis.
 #these were identified by inspecting the stepsByInterval data frame.
 tickmarks<-c(1,68,104,145,187,235) 
@@ -284,6 +278,7 @@ First we'll create the data that only contains NAs.  There should be 8*288=2304 
 
 
 ```r
+#"activity"" is the data frame created by reading in the original data.
 activity_all_NA<-filter(activity, (is.na(steps)))
 activity_all_NA
 ```
@@ -309,8 +304,6 @@ Next we replace the NA data with the corresponding 5-minute interval data.  We'l
 
 
 ```r
-#Choose rows that have NA values for steps
-activity_all_NA<-filter(activity, (is.na(steps)))
 #Put the average steps per 5-minute interval, stored in stepsByInterval, 
 #into the corresponding NA value.  This takes advantage of R's recycling property.
 activity_all_NA$steps<-stepsByInterval$AverageSteps
@@ -383,12 +376,6 @@ stepHisto2
 
 ![](PA1_template_files/figure-html/StepsHistogram2-1.png) 
 
-```r
-stepHisto
-```
-
-![](PA1_template_files/figure-html/StepsHistogram2-2.png) 
-
 The histograms look the same.  Let's compare the mean, median, quartiles and extremes for the imputed and non-imputed data.
 
 
@@ -425,6 +412,73 @@ CompareDailySteps
 ## 3Q                  12810      13290
 ```
 
-The data show differences in the quartiles (1st, 3rd, and median).  The mean, min, and max are the same.  Because we imputed mean values, the means weren't different from the data where NAs were removed.  But, the total N differed between the two data sets, which will affect the quartiles.
+The data show differences in the quartiles (1st, 3rd, and median).  The mean, min, and max are the same.  Because we imputed mean values, the means weren't different from the data where NAs were removed.  But, the total number of observations differed between the two data sets, which affected the quartiles.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+Yes, weekdays and weekends differ in some respects.  To start, we'll create two new variables, one that codes the day of the week, and another that codes for weekday and weekend.  We'll also print the unique weekday values in the data along with their weekend/weekday code so that we can check the success of our operation.
+
+
+
+```r
+#"imputedActivityData" is the activity data with the imputed means we created earlier
+#mutate is a dplyr function
+#wday is a lubridate function for getting day of the week
+imputedActivityData <- mutate(imputedActivityData, 
+        Day = wday(ymd(date), label=TRUE, abbr=TRUE),
+        DayCategory = as.factor(ifelse(Day < "Mon" | Day > "Fri", "Weekend","Weekday")))
+# print the unique values for Day along with the weekday/weekend category
+# so we can check the success of our operation.
+check<-distinct(imputedActivityData,Day)
+#use the dplyr arrange function to sort the data by Category and Day
+arrange(check[,4:5],DayCategory, Day)
+```
+
+```
+## Source: local data frame [7 x 2]
+## 
+##     Day DayCategory
+## 1   Mon     Weekday
+## 2  Tues     Weekday
+## 3   Wed     Weekday
+## 4 Thurs     Weekday
+## 5   Fri     Weekday
+## 6   Sun     Weekend
+## 7   Sat     Weekend
+```
+
+Summarize the data so we can plot it.  This is similar to the approach we took earlier with the steps by interval plot, but we're also grouping the summary by weekday/weekend, in addition to 5 minute interval.
+
+
+```r
+stepsByInterval2<- imputedActivityData %>%
+  group_by(Interval = as.factor(interval),DayCategory) %>%
+  summarise(AverageSteps = mean(steps))
+
+head(stepsByInterval2,5)
+```
+
+```
+## Source: local data frame [5 x 3]
+## Groups: Interval
+## 
+##   Interval DayCategory AverageSteps
+## 1        0     Weekday   2.25115304
+## 2        0     Weekend   0.21462264
+## 3        5     Weekday   0.44528302
+## 4        5     Weekend   0.04245283
+## 5       10     Weekday   0.17316562
+```
+
+Plot the data so we can compare the weekday and weekend data for average steps per 5 minute interval.
+
+
+```r
+xyplot(AverageSteps ~ Interval | DayCategory,
+       data = stepsByInterval2,
+       type = "l",
+       main="Weekday v Weekend Activity Comparison",
+       #we'll use the tickmarks and labels from our earlier interval plot.
+       scales = list(x=list(at=tickmarks,labels = intervalLabels)))
+```
+
+![](PA1_template_files/figure-html/weekendPlot-1.png) 
